@@ -14,6 +14,8 @@ Show, in the same place:
 - Issues where you are assigned to
 - Pending Todos
 
+![demo](demo.png "Illustration of Roci")
+
 ## Install
 
 ### Install from sources
