@@ -1,0 +1,12 @@
+[package]
+description = "Generic gpui components for Roci"
+edition = "2021"
+keywords = []
+name = "roci-app-components"
+version = "0.1.0"
+
+[dependencies]
+gpui.workspace = true
+gpui-component.workspace = true
+tracing.workspace = true
+derive_more.workspace = true
