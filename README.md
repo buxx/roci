@@ -1,5 +1,19 @@
 # 🚀 Roci (Rocinante)
 
+Roci is an very opinionated dashboard to see your current work throught your differents Gitlab projects.
+
+## Features
+
+Show, in the same place:
+
+- Last pipelines state on main branch of your projects
+- Last merge_requests state of your projects
+  - Red color: last pipeline failed
+  - Blue: pending
+  - Green: ready to merge
+- Issues where you are assigned to
+- Pending Todos
+
 ## Install
 
 ### Install from sources
@@ -8,15 +22,22 @@
 
 Then run with `roci`.
 
+## Integration
+
+Example of `.desktop` file:
+
+```
+[Desktop Entry]
+Version=1.0
+Name=Roci
+Comment=Gitlabs resume
+Exec=/home/myusername/.cargo/bin/roci
+Icon=/home/myusername/Images/Icons/rocinate_icon.png
+Terminal=false
+Type=Application
+Categories=Utility;Development;
+```
+
 ## TODO
 
-- [x] Multi gitlab access token for permit gitlab ce projects
-- [x] re-implement auto refresh of pipelines and merge_requests
-- [x] Ui to modify config
-- [ ] Ui to modify displayed number of latest pipelines
-- [ ] Ui to modify merge requests "only mine" or "all"
-- [x] Title bar with menu (config, refresh, about, etc)
-- [ ] Resume of lasts nightly evals
-- [x] Resume of assigned issues
-- [x] bug: need restart after edit gitlab instance config
-- [ ] When applied "refresh_every" config, hot apply on components which use it
+- [ ] Github integration
