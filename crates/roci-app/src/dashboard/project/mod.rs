@@ -1,3 +1,4 @@
+use derive_more::Constructor;
 use gitlab::{api::AsyncQuery, AsyncGitlab};
 use gpui::*;
 use gpui_component::{
@@ -10,6 +11,7 @@ use gpui_component::{
     Icon, IconName, WindowExt,
 };
 use roci_app_components::{error::WithButtonModalError, list::List, with_button_error, LoadState};
+use tracing_unwrap::ResultExt;
 
 use crate::{
     dashboard::{
@@ -57,12 +59,14 @@ impl Projects {
     fn init(window: &mut Window, cx: &mut Context<Self>, config: crate::config::gitlab_::Gitlab) {
         let host = config.host.clone();
         let gitlabs = AppState::global(cx).gitlabs();
+        let instance_url = format!("{}{}", config.protocol(), host);
 
         cx.spawn_in(window, async move |projects, cx| {
             match gitlabs.get(&config).await {
                 Ok(gitlab) => {
                     let _ = projects.update_in(cx, |projects, window, cx| {
-                        let projects_ = Self::projects(window, cx, config, gitlab);
+                        let projects_ =
+                            Self::projects(window, cx, config, gitlab, instance_url.clone());
                         let projects_ = cx.new(|_cx| projects_);
                         projects.inner = cx.new(|_cx| LoadState::Ready(projects_));
 
@@ -93,13 +97,22 @@ impl Projects {
         cx: &mut Context<Self>,
         config: crate::config::gitlab_::Gitlab,
         gitlab: AsyncGitlab,
+        instance_url: String,
     ) -> List<Project> {
         List(
             config
                 .project_ids
                 .iter()
                 .map(|project_id| {
-                    cx.new(|cx| Project::new(window, cx, gitlab.clone(), *project_id))
+                    cx.new(|cx| {
+                        Project::new(
+                            window,
+                            cx,
+                            instance_url.clone(),
+                            gitlab.clone(),
+                            *project_id,
+                        )
+                    })
                 })
                 .collect::<Vec<Entity<Project>>>(),
         )
@@ -216,10 +229,13 @@ impl Project {
     fn new(
         window: &mut Window,
         cx: &mut Context<Self>,
+        instance_url: String,
         gitlab: AsyncGitlab,
         project_id: u64,
     ) -> Self {
         let gitlab_ = gitlab.clone();
+        let project_url = format!("{}/projects/{}", instance_url, project_id);
+
         cx.spawn_in(window, async move |project, cx| {
             match get_project(gitlab_.clone(), project_id).await {
                 Ok(project_) => {
@@ -231,10 +247,8 @@ impl Project {
                             .new(|cx| MergeRequests::new(window, cx, gitlab_.clone(), project_id));
 
                         project.0 = cx.new(|cx| {
-                            LoadState::Ready(cx.new(|_cx| ProjectInner {
-                                name,
-                                pipelines,
-                                merge_requests,
+                            LoadState::Ready(cx.new(|_cx| {
+                                ProjectInner::new(name, project_url, pipelines, merge_requests)
                             }))
                         });
                     });
@@ -256,11 +270,12 @@ impl Project {
         .detach();
 
         let gitlab_ = gitlab.clone();
+        let instance_url = instance_url.clone();
         let interval = AppState::global(cx).config().refresh_every.duration();
         cx.spawn_in(window, async move |project, cx| {
             Timer::after(interval).await;
             let _ = project.update_in(cx, |project, window, cx| {
-                *project = Self::new(window, cx, gitlab_.clone(), project_id);
+                *project = Self::new(window, cx, instance_url, gitlab_.clone(), project_id);
                 cx.notify();
             });
         })
@@ -276,16 +291,25 @@ impl Render for Project {
     }
 }
 
+#[derive(Constructor)]
 pub struct ProjectInner {
     name: SharedString,
+    project_url: String,
     pipelines: Entity<Pipelines>,
     merge_requests: Entity<MergeRequests>,
 }
 
 impl Render for ProjectInner {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         h_flex()
-            .child(self.name.clone())
+            .child(
+                Button::new(self.name.clone())
+                    .label(self.name.clone())
+                    .link()
+                    .on_click(cx.listener(|this, _, _window, _cx| {
+                        open::that(this.project_url.clone()).unwrap_or_log()
+                    })),
+            )
             .child(" | ".to_string())
             .child(self.pipelines.clone())
             .child(" | ".to_string())
