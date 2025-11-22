@@ -58,7 +58,7 @@ jobs:
         with:
           upload_url: ${{ env.UPLOAD_URL }}
           asset_path: target/release/roci.exe
-          asset_name: roci_linux.exe
+          asset_name: roci.exe
           asset_content_type: application/octet-stream
 
   build-linux:
