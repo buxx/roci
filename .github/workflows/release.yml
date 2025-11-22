@@ -59,6 +59,7 @@ jobs:
           upload_url: ${{ env.UPLOAD_URL }}
           asset_path: target/release/roci.exe
           asset_name: roci_linux.exe
+          asset_content_type: application/octet-stream
 
   build-linux:
     name: Build and package for Linux
@@ -93,3 +94,4 @@ jobs:
           upload_url: ${{ env.UPLOAD_URL }}
           asset_path: target/release/roci
           asset_name: roci
+          asset_content_type: application/octet-stream
