@@ -4,7 +4,7 @@ edition = "2021"
 keywords = ["desktop", "gpui", "dashboard"]
 name = "roci"
 readme = "../../README.md"
-version = "0.1.0"
+version = "0.2.0"
 
 [dependencies]
 roci-app-components = { path = "../roci-app-components" }
