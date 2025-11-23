@@ -286,7 +286,18 @@ impl Render for Dashboard {
             );
         }
 
-        div()
+        v_flex()
+            .size_full()
+            .child(
+                TitleBar::new().child(
+                    h_flex().w_full().pr_2().justify_between().child(
+                        h_flex()
+                            .child(Icon::new(crate::assets::Icon::Spaceship))
+                            .child(" ")
+                            .child("Roci: your work dashboard spaceship"),
+                    ),
+                ),
+            )
             .child(
                 v_flex()
                     .child(

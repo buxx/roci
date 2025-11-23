@@ -26,8 +26,30 @@ fn main() -> Result<(), anyhow::Error> {
         state::AppState::init(cx, config);
         Theme::global_mut(cx).apply_config(&Rc::new(theme));
 
+        let mut window_size = size(px(1600.0), px(1200.0));
+        if let Some(display) = cx.primary_display() {
+            let display_size = display.bounds().size;
+            window_size.width = window_size.width.min(display_size.width * 0.85);
+            window_size.height = window_size.height.min(display_size.height * 0.85);
+        }
+        let window_bounds = Bounds::centered(None, window_size, cx);
+
         let window_options = WindowOptions {
-            window_bounds: Some(WindowBounds::centered(size(px(800.), px(600.)), cx)),
+            window_bounds: Some(WindowBounds::Windowed(window_bounds)),
+            titlebar: Some(TitlebarOptions {
+                title: None,
+                appears_transparent: true,
+                traffic_light_position: Some(point(px(9.0), px(9.0))),
+            }),
+            window_min_size: Some(gpui::Size {
+                width: px(640.),
+                height: px(480.),
+            }),
+            kind: WindowKind::Normal,
+            #[cfg(target_os = "linux")]
+            window_background: gpui::WindowBackgroundAppearance::Transparent,
+            #[cfg(target_os = "linux")]
+            window_decorations: Some(gpui::WindowDecorations::Client),
             ..Default::default()
         };
 

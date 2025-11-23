@@ -1,11 +1,13 @@
 use anyhow::anyhow;
 use gpui::*;
+use gpui_component::IconNamed;
 use rust_embed::RustEmbed;
 use std::borrow::Cow;
 
 #[derive(RustEmbed)]
 #[folder = "./assets"]
 #[include = "icons/**/*.svg"]
+#[include = "icons2/**/*.svg"]
 pub struct Assets;
 
 impl AssetSource for Assets {
@@ -19,5 +21,18 @@ impl AssetSource for Assets {
         Ok(Self::iter()
             .filter_map(|p| p.starts_with(path).then(|| p.into()))
             .collect())
+    }
+}
+
+pub enum Icon {
+    Spaceship,
+}
+
+impl IconNamed for Icon {
+    fn path(self) -> SharedString {
+        match self {
+            Icon::Spaceship => "icons2/spaceship.svg",
+        }
+        .into()
     }
 }
