@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use gpui::*;
 use gpui_component::{
     button::{Button, ButtonVariants},
@@ -11,7 +13,11 @@ use roci_app_components::{bool::BooleanState, list::List};
 use strum::IntoEnumIterator;
 
 use crate::{
-    config::{merge_request::ShowMergeRequest, refresh::RefreshEvery},
+    config::{
+        merge_request::ShowMergeRequest,
+        refresh::RefreshEvery,
+        theme::{load_theme, ThemeMode},
+    },
     state::AppState,
 };
 
@@ -24,7 +30,7 @@ mod todo;
 pub const CONTAINER_PADDING: Pixels = px(15.);
 
 pub struct Dashboard {
-    notifications: Vec<(NotificationType, String)>,
+    notifications: Vec<(NotificationType, SharedString)>,
     projects: Entity<List<project::Projects>>,
     issues: Entity<List<issue::Issues>>,
     todos: Entity<List<todo::Todos>>,
@@ -37,6 +43,7 @@ pub struct Dashboard {
     //
     refresh_every: Entity<SelectState<Vec<RefreshEvery>>>,
     show_merge_request: Entity<SelectState<Vec<ShowMergeRequest>>>,
+    theme_mode: Entity<SelectState<Vec<ThemeMode>>>,
 }
 
 impl Dashboard {
@@ -119,6 +126,21 @@ impl Dashboard {
         )
         .detach();
 
+        let theme_mode_index = ThemeMode::iter()
+            .collect::<Vec<ThemeMode>>()
+            .iter()
+            .position(|v| v == &config.theme_mode);
+        let theme_mode = cx.new(|cx| {
+            SelectState::new(
+                ThemeMode::iter().collect(),
+                theme_mode_index.map(|v| IndexPath::new(v)),
+                window,
+                cx,
+            )
+        });
+        cx.subscribe_in(&theme_mode, window, Self::on_select_theme_mode)
+            .detach();
+
         Self {
             notifications: vec![],
             projects,
@@ -133,10 +155,14 @@ impl Dashboard {
             //
             refresh_every,
             show_merge_request,
+            theme_mode,
         }
     }
 
-    pub fn with_notifications(mut self, notifications: Vec<(NotificationType, String)>) -> Self {
+    pub fn with_notifications(
+        mut self,
+        notifications: Vec<(NotificationType, SharedString)>,
+    ) -> Self {
         self.notifications.extend(notifications);
         self
     }
@@ -200,6 +226,52 @@ impl Dashboard {
 
         self.refresh_all(window, cx);
     }
+
+    fn on_select_theme_mode(
+        &mut self,
+        _: &Entity<SelectState<Vec<ThemeMode>>>,
+        event: &SelectEvent<Vec<ThemeMode>>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let SelectEvent::Confirm(Some(theme_mode)) = event else {
+            return;
+        };
+        let state = AppState::global_mut(cx);
+        let mut new_config = state.config().clone();
+        new_config.theme_mode = theme_mode.clone();
+        let (theme, theme_error) = match load_theme(*theme_mode) {
+            Ok(value) => value,
+            Err(error) => {
+                window.push_notification(
+                    (
+                        NotificationType::Error,
+                        SharedString::new(format!("Failed to apply theme: {:#}", error)),
+                    ),
+                    cx,
+                );
+                return;
+            }
+        };
+        Theme::global_mut(cx).apply_config(&Rc::new(theme));
+
+        if let Some(error) = theme_error {
+            window.push_notification(error.into_notification(), cx);
+            return;
+        }
+
+        let state = AppState::global_mut(cx);
+        if let Err(error) = state.replace_config(new_config.clone()) {
+            window.push_notification(
+                (
+                    NotificationType::Error,
+                    SharedString::new(format!("Failed to write config on disk: {:#}", error)),
+                ),
+                cx,
+            );
+            return;
+        }
+    }
 }
 
 impl Render for Dashboard {
@@ -254,7 +326,8 @@ impl Render for Dashboard {
                                     .tooltip("Refresh now"),
                             )
                             .child(Select::new(&refresh_every))
-                            .child(Select::new(&self.show_merge_request)),
+                            .child(Select::new(&self.show_merge_request))
+                            .child(Select::new(&self.theme_mode)),
                     )
                     .child(
                         div()

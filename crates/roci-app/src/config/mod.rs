@@ -1,13 +1,15 @@
+use gpui::SharedString;
 use gpui_component::notification::NotificationType;
 use serde::{Deserialize, Serialize};
 use std::{fs, io, path::PathBuf};
 use thiserror::Error;
 
-use crate::config::{merge_request::ShowMergeRequest, refresh::RefreshEvery};
+use crate::config::{merge_request::ShowMergeRequest, refresh::RefreshEvery, theme::ThemeMode};
 
 pub mod gitlab_;
 pub mod merge_request;
 pub mod refresh;
+pub mod theme;
 
 const KEYRING_SERVICE_NAME: &str = "roci";
 
@@ -16,6 +18,8 @@ pub struct Config {
     pub gitlabs: Vec<gitlab_::Gitlab>,
     pub refresh_every: RefreshEvery,
     pub show_merge_request: ShowMergeRequest,
+    #[serde(default)]
+    pub theme_mode: ThemeMode,
 }
 
 impl Config {
@@ -76,12 +80,18 @@ pub enum ConfigLoadInfo {
 }
 
 impl ConfigLoadInfo {
-    pub fn into_notification(&self) -> (NotificationType, String) {
+    pub fn into_notification(&self) -> (NotificationType, SharedString) {
         match self {
-            ConfigLoadInfo::NoOne(_) => (NotificationType::Info, format!("No config found")),
+            ConfigLoadInfo::NoOne(_) => (
+                NotificationType::Info,
+                SharedString::new(format!("No config found")),
+            ),
             ConfigLoadInfo::Invalid(message) => (
                 NotificationType::Warning,
-                format!("Invalid config found ({}), new one crated", message),
+                SharedString::new(format!(
+                    "Invalid config found ({}), new one crated",
+                    message
+                )),
             ),
         }
     }

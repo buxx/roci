@@ -28,3 +28,4 @@ reqwest.workspace = true
 homedir.workspace = true
 ron.workspace = true
 keyring.workspace = true
+dark-light = "2.0.0"
