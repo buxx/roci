@@ -325,21 +325,30 @@ impl Render for Dashboard {
                                     }),
                             )
                             .child(
-                                Button::new("Refresh now")
-                                    .icon(IconName::Loader)
-                                    .on_click({
-                                        let view = view.clone();
+                                div().child(
+                                    h_flex()
+                                        .child(
+                                            Button::new("Refresh now")
+                                                .icon(IconName::Loader)
+                                                .on_click({
+                                                    let view = view.clone();
 
-                                        window.listener_for(&view, |this, _, window, cx| {
-                                            this.refresh_all(window, cx);
-                                        })
-                                    })
-                                    .tooltip("Refresh now"),
-                            )
-                            .child(Select::new(&refresh_every))
-                            .child(Select::new(&self.show_merge_request))
-                            .child(Select::new(&self.theme_mode)),
+                                                    window.listener_for(
+                                                        &view,
+                                                        |this, _, window, cx| {
+                                                            this.refresh_all(window, cx);
+                                                        },
+                                                    )
+                                                })
+                                                .tooltip("Refresh now"),
+                                        )
+                                        .child(Select::new(&refresh_every))
+                                        .child(Select::new(&self.show_merge_request))
+                                        .child(Select::new(&self.theme_mode)),
+                                ),
+                            ),
                     )
+                    .scrollable(Axis::Vertical)
                     .child(
                         div()
                             .flex_1()
@@ -353,6 +362,5 @@ impl Render for Dashboard {
             .children(Root::render_dialog_layer(window, cx))
             .children(Root::render_sheet_layer(window, cx))
             .children(Root::render_notification_layer(window, cx))
-            .scrollable(Axis::Vertical)
     }
 }
