@@ -12,6 +12,7 @@ mod dashboard;
 mod logging;
 mod runtime;
 mod state;
+mod utils;
 
 fn main() -> Result<(), anyhow::Error> {
     configure_logging();

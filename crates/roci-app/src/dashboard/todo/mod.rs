@@ -12,6 +12,7 @@ use tracing_unwrap::ResultExt;
 use crate::{
     dashboard::{error::GitlabError, todo::endpoint::MyTodos},
     state::{gitlab::todo::Todo, AppState},
+    utils::Truncate,
 };
 
 mod endpoint;
@@ -115,7 +116,7 @@ impl Render for TodosInner {
                     h_flex().id(ElementId::Integer(todo.id)).child(
                         Button::new("id-link")
                             .link()
-                            .label(todo.body.to_string())
+                            .label(todo.body.to_string().truncated(254))
                             .on_click(move |_, _, _| {
                                 open::that(target_url.clone()).unwrap_or_log();
                             }),
