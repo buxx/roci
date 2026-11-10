@@ -28,4 +28,5 @@ reqwest.workspace = true
 homedir.workspace = true
 ron.workspace = true
 keyring.workspace = true
+libc = ">=0.2.177, <0.2.190"
 dark-light = "2.0.0"
